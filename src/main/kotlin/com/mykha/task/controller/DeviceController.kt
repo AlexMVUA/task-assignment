@@ -18,7 +18,7 @@ class DeviceController(
     @PostMapping("/api/device/")
     fun createDevice(@RequestBody device: Device): ResponseEntity<String> {
         val deviceUuid = deviceRepository.createDevice(device)
-        return ResponseEntity<String>(deviceUuid, HttpStatus.OK)
+        return ResponseEntity<String>(deviceUuid, HttpStatus.CREATED)
     }
 
     @GetMapping("/api/device/{uuid}")

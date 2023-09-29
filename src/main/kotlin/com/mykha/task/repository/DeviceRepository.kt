@@ -5,6 +5,7 @@ import com.mykha.task.tool.UuidGenerator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
 
@@ -26,18 +27,23 @@ class DeviceRepository(val jdbcTemplate: JdbcTemplate, val uuidGenerator: UuidGe
     }
 
     fun getDeviceByUuid(uuid: String): Device {
-        val result: List<Device> = jdbcTemplate.query(
-            "select * from devices where uuid=?", { resultSet, _ ->
-                map(resultSet)
-            },
+        val results: List<Device> = jdbcTemplate.query(
+            "select uuid, serialNumber, phoneNumber, model from devices where uuid=?",
+            DeviceMapper(),
             uuid
         )
 
-        logger.debug("debug {}", result)
-        return result.first()
+        logger.debug("debug {}", results)
+        if (results.isEmpty()) {
+            logger.warn("Device with uuid:{} wasn't found", uuid)
+            throw ItemNotFoundException()
+        }
+        return results.first()
     }
+}
 
-    private fun map(resultSet: ResultSet): Device =
+class DeviceMapper: RowMapper<Device> {
+    override fun mapRow(resultSet: ResultSet, rowNum: Int): Device =
         Device(
             uuid = resultSet.getString("uuid"),
             serialNumber = resultSet.getString("serialNumber"),

@@ -26,9 +26,9 @@ class DeviceControllerTest {
 
     @Test
     fun shouldCreateDevice() {
-        val resultUuid = deviceController.createDevice(defaultDevice)
-        assertThat(resultUuid.statusCode).isEqualTo(HttpStatus.CREATED)
-        assertThat(resultUuid.body).isEqualTo(defaultUuid)
+        val response = deviceController.createDevice(defaultDevice)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.CREATED)
+        assertThat(response.body).isEqualTo(defaultUuid)
     }
 
     @Test

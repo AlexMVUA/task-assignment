@@ -1,6 +1,7 @@
 package com.mykha.task.repository
 
 import com.mykha.task.model.Device
+import com.mykha.task.model.DeviceAssignment
 import com.mykha.task.tool.UuidGenerator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,7 +21,7 @@ class DeviceRepository(val jdbcTemplate: JdbcTemplate, val uuidGenerator: UuidGe
         device.uuid = uuidGenerator.generateUuid().toString()
         logger.debug("debug {}", device)
         jdbcTemplate.update(
-            "insert into devices (uuid, serialNumber, phoneNumber, model) values ( ?, ? ,?,?)",
+            "insert into devices (uuid, serialNumber, phoneNumber, model) values (?,?,?,?)",
             device.uuid, device.serialNumber, device.phoneNumber, device.model
         )
         return device.uuid!!
@@ -28,7 +29,7 @@ class DeviceRepository(val jdbcTemplate: JdbcTemplate, val uuidGenerator: UuidGe
 
     fun getDeviceByUuid(uuid: String): Device {
         val results: List<Device> = jdbcTemplate.query(
-            "select uuid, serialNumber, phoneNumber, model from devices where uuid=?",
+            "select uuid, serialNumber, phoneNumber, model, userId from devices where uuid=?",
             DeviceMapper(),
             uuid
         )
@@ -40,6 +41,26 @@ class DeviceRepository(val jdbcTemplate: JdbcTemplate, val uuidGenerator: UuidGe
         }
         return results.first()
     }
+
+    fun getDevicesByUserId(userId: String): List<Device> {
+        val devices: List<Device> = jdbcTemplate.query(
+            "select uuid, serialNumber, phoneNumber, model, userId from devices where userId=?",
+            DeviceMapper(),
+            userId
+        )
+        logger.debug("getDevicesByUserId:{}", devices)
+        return devices
+    }
+
+    fun assignDevice(deviceAssignment: DeviceAssignment) {
+        val updatedRows = jdbcTemplate.update(
+            "update devices set userId=? where uuid=?",
+            deviceAssignment.userId, deviceAssignment.deviceUuid
+        )
+        if (updatedRows == 0) {
+            throw ItemNotFoundException("Device wasn't found by provided uuid: ${deviceAssignment.deviceUuid}")
+        }
+    }
 }
 
 class DeviceMapper: RowMapper<Device> {
@@ -48,6 +69,7 @@ class DeviceMapper: RowMapper<Device> {
             uuid = resultSet.getString("uuid"),
             serialNumber = resultSet.getString("serialNumber"),
             phoneNumber = resultSet.getString("phoneNumber"),
-            model = resultSet.getString("model")
+            model = resultSet.getString("model"),
+            userId = resultSet.getString("userId")
         )
 }
